@@ -11,5 +11,11 @@
     "type": "page",
     "href": "https://twitter.com/0xwaya",
     "newWindow": true
+  },
+  "github": {
+    "title": "GitHub ↗",
+    "type": "page",
+    "href": "https://twitter.com/0xwaya/web3-docs",
+    "newWindow": true
   }
 }
