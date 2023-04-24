@@ -426,4 +426,29 @@ export default async function handler(req, res) {
 
    #### Implementing the NFT collection sales display
 
-    
+    - Create a new page for your new component in the `pages` directory and name it `sales.jsx`
+    - Import the NftCollectionSalesDisplay component at the top 
+    ```import NftCollectionSalesDisplay from "./components/nftCollectionSalesDisplay.jsx"```
+    - The sales.jsx file should look like this:
+
+```javascript
+    import styles from "../styles/Home.module.css";
+import NftCollectionSales from "../components/NftCollectionSalesDisplay";
+
+
+export default function Home() {
+  return (
+    <div>
+      <main className={styles.main}>
+       <NftCollectionSales collectionAddress={"0x1e988ba4692e52Bc50b375bcC8585b95c48AaD77"}/>
+       </main>
+    </div>
+  );
+}
+```
+ 
+    #### link the sales.jsx page to a button in InstructionsComponent.jsx 
+
+        ```terminal
+        that's all folks !!!
+        ```
