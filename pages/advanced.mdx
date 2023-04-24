@@ -1,4 +1,460 @@
 # Advanced
 
-You can find the more advanced examples in the [createweb3dapp.com/#components](https://staging.createweb3dapp.com/#components) website.
+more advanced examples in the [createweb3dapp.com/#components](https://staging.createweb3dapp.com/#components) website.
 
+### Add Component to fetch NFT collection sales data from OpenSea
+    - in this example, we are fetching the sales data for the "Bufficorn Buidl Brigade" collection.
+    - you can find the collection address on OpenSea: https://opensea.io/collection/bufficornbuidlbrigade
+
+
+    #### Step 1: Create files in corresponding folders
+
+        - ```./components``` create ```nftCollectionSalesDisplay.jsx```
+
+        - ```./styles``` create ```NftCollectionSalesDisplay.module.css```
+
+        - ```./pages/api``` createget ```NftCollectionSales.js```
+
+    #### Step 2: Add code to files 
+     
+        => ```nftCollectionSalesDisplay.jsx```
+```jsx
+import styles from "../styles/NftCollectionSalesDisplay.module.css";
+import { useState } from "react";
+import { useEffect } from "react";
+
+
+// Main component function
+export default function NftCollectionSales({ chain, limit, collectionAddress }) {
+  // Set up state variables
+  const [isLoading, setIsloading] = useState(false);
+  const [transactions, setTransactions] = useState();
+  const [address, setAddress] = useState(collectionAddress);
+  const [pageKey, setPageKey] = useState();
+
+  // Function that handles Enter key press and initiates data fetching
+  const returnHandler = async (e) => {
+    if (e.keyCode === 13 && address) {
+      setIsloading(true);
+      await getNftSales();
+      setIsloading(false);
+    }
+  };
+
+  // Fetch data on component mount
+  useEffect(() => {
+    if (address.length) {
+      getNftSales();
+    }
+  }, []);
+
+  // Function that fetches NFT sales data
+  const getNftSales = async (pagekey) => {
+    // Make a POST request to the server to fetch data
+    const res = await fetch("/api/getNftCollectionSales", {
+      method: "POST",
+      body: JSON.stringify({
+        // Replace with the smart contract address of the NFTs collection you're looking for
+        contractAddress: address,
+        chain: chain ? chain : "ETH_MAINNET",
+        limit: limit ? limit : 100,
+        pageKey: pagekey ? pagekey : null,
+      }),
+    }).then((transaction) => transaction.json());
+    // If data is received successfully
+    if (res.sales) {
+      // If there are more pages to fetch
+      if (pagekey) {
+        // Add new transactions to the existing list of transactions
+        setTransactions((prev) => {
+          if (prev) return [...prev, ...res.sales];
+          else return res.sales;
+        });
+      } else {
+        // Replace the existing list of transactions with the new one
+        setTransactions(res.sales);
+      }
+      // If there is a new page key, update the state variable
+      if (res.pageKey && res.pageKey.length != pagekey) {
+        setPageKey(res.pageKey);
+      } else {
+        setPageKey(null);
+      }
+    } else {
+      // If no data is received, set state variables to null
+      setPageKey();
+      setTransactions();
+    }
+  };
+  return (
+    <div className={styles.tx_history_container}>
+      <div className={styles.transaction_search_container}>
+        <img
+          onClick={() => {
+            getNftSales();
+          }}
+          className={styles.search_icon}
+          src="https://static.alchemyapi.io/images/cw3d/Icon%20Medium/search-01-m.svg"
+        ></img>
+        <input
+          className={styles.input}
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          placeholder="Collection's contract address"
+          onKeyDown={returnHandler}
+        />
+      </div>
+      <div className={styles.table_container}>
+        <div className={styles.table}>
+          {isLoading ? (
+            <div className={styles.warning}>Loading...</div>
+          ) : !transactions?.length ? (
+            <div className={styles.warning}>
+              No transactions with this address
+            </div>
+          ) : null}
+          <div className={styles.column}>
+            <div className={styles.row}>
+              <span className={styles.title}>ITEM</span>
+            </div>
+            <hr />
+            {transactions &&
+              transactions?.map((tx, i) => {
+                return (
+                  <div key={i} className={styles.row}>
+                    #{tx.tokenId}
+                  </div>
+                );
+              })}
+          </div>
+          <div className={styles.column}>
+            <div className={styles.row}>
+              <span className={styles.title}>PRICE</span>
+            </div>
+            <hr />
+            {transactions &&
+              transactions?.map((tx, i) => {
+                return (
+                  <div key={i} className={styles.row}>
+                    <span className={styles.price}>{tx.sellerFee} ETH</span>
+                  </div>
+                );
+              })}
+          </div>
+          <div className={styles.column}>
+            <div className={styles.row}>
+              <span className={styles.title}>FROM</span>
+            </div>
+            <hr />
+            {transactions &&
+              transactions?.map((tx, i) => {
+                return (
+                  <div key={i} className={styles.row}>
+                    <span className={styles.blue_text}>
+                      {tx.sellerAddress.slice(0, 6)}...
+                      {tx.sellerAddress.slice(6, 10)}
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+          <div className={styles.column}>
+            <div className={styles.row}>
+              <span className={styles.title}>TO</span>
+            </div>
+            <hr />
+            {transactions &&
+              transactions?.map((tx, i) => {
+                return (
+                  <div key={i} className={styles.row}>
+                    <span className={styles.blue_text}>
+                      {tx.buyerAddress.slice(0, 6)}...
+                      {tx.buyerAddress.slice(6, 10)}
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      </div>
+      <button
+        className={
+          isLoading || !pageKey
+            ? styles.button_unclicked
+            : styles.button_clicked
+        }
+        onClick={() => {
+          getNftSales(pageKey);
+        }}
+        disabled={!pageKey || isLoading}
+      >
+        next
+      </button>
+    </div>
+  );
+}
+```
+
+    => ```NftCollectionSalesDisplay.module.css```
+
+    ```css
+    .tx_history_container {
+    width: 700px;
+    margin: auto;
+    margin-top: 1rem;
+    padding: 1em;   
+    background-color:	#282828;
+    border-radius: 13px;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+
+  }
+  
+  @media screen and (max-width: 955px) {
+    .tx_history_container {
+      width: 700px;
+    }
+  }
+  @media screen and (max-width: 750px) {
+    .tx_history_container {
+      width: 500px;
+    }
+  }
+  @media screen and (max-width: 560px) {
+    .tx_history_container {
+        width: 340%;
+     
+    }
+  }
+  
+  .table_container {
+    border: 1px solid #ecf0f9;
+    border-radius: 13px;
+    padding: 0.5em;
+    margin-bottom: 1em;
+    
+  }
+  
+  .header_container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1em;
+    align-items: center;
+    display-flex: column;
+
+  }
+  
+  .table {
+    display: flex;
+    gap: 16px;
+    min-width: 360px;
+    max-height: 550px;
+    overflow: scroll;
+  }
+  
+  .column {
+    margin-bottom: 1em;
+    width: 100%;
+    min-height: 200px;
+    white-space: nowrap;
+  }
+  
+  .row {
+    padding: 12px;
+    height: 3em;
+    margin: auto;
+    width: 100%;
+    font-weight: 500;
+    max-width: 200px;
+    overflow: scroll;
+    text-overflow: ellipsis;
+    color: #CC00FF;
+
+  }
+  
+  .title {
+    color: 	#D3D3D3;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  
+  .price {
+    font-weight: 700;
+    color: #00ff00;
+  }
+  
+  .blue_text {
+    color: #0057da;
+  }
+  
+  .name {
+    font-size: 16px;
+    font-weight: 700;
+   }
+
+  
+  .tab_group {
+    display: flex;
+    height: 40px;
+    width: 144px;
+    border: 1px solid #ecf0f9;
+    border-radius: 8px;
+    justify-content: space-between;
+    padding: 2px;
+  }
+  
+  .button_group {
+    display: flex;
+  }
+  
+  .button_clicked {
+    border-radius: 8px;
+    background-color: #383838;
+    color: white;
+    padding: 6px 7px;
+  }
+  
+  .button_unclicked {
+    border-radius: 8px;
+    background-color: #303030;
+    color: white;
+    padding: 6px 7px;
+    opacity: 0.5;
+    cursor: not-allowed;
+
+  }
+  
+  .transaction_search_container {
+    margin-bottom: 1em;
+    display: flex;
+    gap: 1rem;
+    position: relative;
+  
+  }
+  
+  .input {
+    height: 48px;
+    width: 100%;
+    border: 1px solid #cfd9f0;
+    border-radius: 13px;
+    padding: 8px;
+    padding-left: 30px;
+  }
+  
+  .search_icon{
+    position: absolute;
+    top: 13px;
+    left: 6px;
+    cursor: pointer;
+  }
+  
+  
+  
+  .input_field {
+    width: 100%;
+    padding: 10px;
+    text-align: center;
+  }
+  
+  .warning {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 6em;
+    text-align: center;
+  }
+  ```
+
+    => ```NftCollectionSalesDisplay.js```
+
+    ```javascript
+    import { Alchemy, Network, NftSaleMarketplace } from "alchemy-sdk";
+
+// Exported function handling the POST request
+export default async function handler(req, res) {
+  // Extracting data from the request body
+  const { contractAddress, chain, limit, pageKey } = JSON.parse(req.body);
+
+  // Check if the method is not POST
+  if (req.method !== "POST") {
+    // Respond with status 405 Method Not Allowed and a message
+    res.status(405).send({ message: "Only POST requests allowed" });
+    return;
+  }
+
+  // Setting up the Alchemy API key and network
+  const settings = {
+    apiKey: process.env.ALCHEMY_API_KEY,
+    network: Network[chain],
+  };
+  // Creating an instance of the Alchemy client with the settings
+  const alchemy = new Alchemy(settings);
+
+  try {
+    // Retrieving NFT sales from the Alchemy API
+    const sales = await alchemy.nft.getNftSales({
+      marketplace: NftSaleMarketplace.SEAPORT,
+      contractAddress: contractAddress,
+      limit: limit,
+      pageKey: pageKey ? pageKey : null,
+    });
+    // Formatting the sales data
+    const formattedSales = sales.nftSales.map((NFT) => {
+      const { tokenId, quantity, buyerAddress, sellerAddress, sellerFee } = NFT;
+      return {
+        tokenId,
+        quantity,
+        buyerAddress,
+        sellerAddress,
+        // Converting the seller fee amount to the correct format
+        sellerFee:
+          parseInt(sellerFee.amount) / Math.pow(10, sellerFee.decimals),
+        tokenSymbol: sellerFee.symbol,
+      };
+    });
+
+    // Responding with the formatted sales data and the page key (if any)
+    res.status(200).json({
+      sales: formattedSales,
+      pageKey: sales.pageKey,
+    });
+    // Rest of the code
+  } catch (e) {
+    // Catching any errors and responding with status 500 Internal Server Error and a message
+    console.warn(e);
+    res.status(500).send({
+      message: "something went wrong, check the log in your terminal",
+    });
+  }
+}
+```
+
+   #### Implementing the NFT collection sales display
+
+    - Create a new page for your new component in the `pages` directory and name it `sales.jsx`
+    - Import the NftCollectionSalesDisplay component at the top 
+    ```import NftCollectionSalesDisplay from "./components/nftCollectionSalesDisplay.jsx"```
+    - The sales.jsx file should look like this:
+
+```javascript
+    import styles from "../styles/Home.module.css";
+import NftCollectionSales from "../components/NftCollectionSalesDisplay";
+
+
+export default function Home() {
+  return (
+    <div>
+      <main className={styles.main}>
+       <NftCollectionSales collectionAddress={"0x1e988ba4692e52Bc50b375bcC8585b95c48AaD77"}/>
+       </main>
+    </div>
+  );
+}
+```
+ 
+    - Now
+
+    ###### link the sales.jsx page to a button in InstructionsComponent.jsx 
+
+        ```terminal
+        that's all folks !!!
+        ```
