@@ -3,7 +3,7 @@
     - you can find the collection address on OpenSea: https://opensea.io/collection/bufficornbuidlbrigade
 
 
-    * Step 1: Create files in corresponding folders
+    #### Step 1: Create files in corresponding folders
 
         - ```./components``` create ```nftCollectionSalesDisplay.jsx```
 
@@ -11,9 +11,9 @@
 
         - ```./pages/api``` createget ```NftCollectionSales.js```
 
-    * Step 2: Add code to files 
+    #### Step 2: Add code to files 
      
-        - ```./components/nftCollectionSalesDisplay.jsx```
+        => ```nftCollectionSalesDisplay.jsx```
 ```jsx
 import styles from "../styles/NftCollectionSalesDisplay.module.css";
 import { useState } from "react";
@@ -191,5 +191,239 @@ export default function NftCollectionSales({ chain, limit, collectionAddress }) 
 }
 ```
 
+    => ```NftCollectionSalesDisplay.module.css```
+
+    ```css
+    .tx_history_container {
+    width: 700px;
+    margin: auto;
+    margin-top: 1rem;
+    padding: 1em;   
+    background-color:	#282828;
+    border-radius: 13px;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+
+  }
+  
+  @media screen and (max-width: 955px) {
+    .tx_history_container {
+      width: 700px;
+    }
+  }
+  @media screen and (max-width: 750px) {
+    .tx_history_container {
+      width: 500px;
+    }
+  }
+  @media screen and (max-width: 560px) {
+    .tx_history_container {
+        width: 340%;
+     
+    }
+  }
+  
+  .table_container {
+    border: 1px solid #ecf0f9;
+    border-radius: 13px;
+    padding: 0.5em;
+    margin-bottom: 1em;
+    
+  }
+  
+  .header_container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1em;
+    align-items: center;
+    display-flex: column;
+
+  }
+  
+  .table {
+    display: flex;
+    gap: 16px;
+    min-width: 360px;
+    max-height: 550px;
+    overflow: scroll;
+  }
+  
+  .column {
+    margin-bottom: 1em;
+    width: 100%;
+    min-height: 200px;
+    white-space: nowrap;
+  }
+  
+  .row {
+    padding: 12px;
+    height: 3em;
+    margin: auto;
+    width: 100%;
+    font-weight: 500;
+    max-width: 200px;
+    overflow: scroll;
+    text-overflow: ellipsis;
+    color: #CC00FF;
+
+  }
+  
+  .title {
+    color: 	#D3D3D3;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  
+  .price {
+    font-weight: 700;
+    color: #00ff00;
+  }
+  
+  .blue_text {
+    color: #0057da;
+  }
+  
+  .name {
+    font-size: 16px;
+    font-weight: 700;
+   }
+
+  
+  .tab_group {
+    display: flex;
+    height: 40px;
+    width: 144px;
+    border: 1px solid #ecf0f9;
+    border-radius: 8px;
+    justify-content: space-between;
+    padding: 2px;
+  }
+  
+  .button_group {
+    display: flex;
+  }
+  
+  .button_clicked {
+    border-radius: 8px;
+    background-color: #383838;
+    color: white;
+    padding: 6px 7px;
+  }
+  
+  .button_unclicked {
+    border-radius: 8px;
+    background-color: #303030;
+    color: white;
+    padding: 6px 7px;
+    opacity: 0.5;
+    cursor: not-allowed;
+
+  }
+  
+  .transaction_search_container {
+    margin-bottom: 1em;
+    display: flex;
+    gap: 1rem;
+    position: relative;
+  
+  }
+  
+  .input {
+    height: 48px;
+    width: 100%;
+    border: 1px solid #cfd9f0;
+    border-radius: 13px;
+    padding: 8px;
+    padding-left: 30px;
+  }
+  
+  .search_icon{
+    position: absolute;
+    top: 13px;
+    left: 6px;
+    cursor: pointer;
+  }
+  
+  
+  
+  .input_field {
+    width: 100%;
+    padding: 10px;
+    text-align: center;
+  }
+  
+  .warning {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 6em;
+    text-align: center;
+  }
+  ```
+
+    => ```NftCollectionSalesDisplay.js```
+
+    ```javascript
+    import { Alchemy, Network, NftSaleMarketplace } from "alchemy-sdk";
+
+// Exported function handling the POST request
+export default async function handler(req, res) {
+  // Extracting data from the request body
+  const { contractAddress, chain, limit, pageKey } = JSON.parse(req.body);
+
+  // Check if the method is not POST
+  if (req.method !== "POST") {
+    // Respond with status 405 Method Not Allowed and a message
+    res.status(405).send({ message: "Only POST requests allowed" });
+    return;
+  }
+
+  // Setting up the Alchemy API key and network
+  const settings = {
+    apiKey: process.env.ALCHEMY_API_KEY,
+    network: Network[chain],
+  };
+  // Creating an instance of the Alchemy client with the settings
+  const alchemy = new Alchemy(settings);
+
+  try {
+    // Retrieving NFT sales from the Alchemy API
+    const sales = await alchemy.nft.getNftSales({
+      marketplace: NftSaleMarketplace.SEAPORT,
+      contractAddress: contractAddress,
+      limit: limit,
+      pageKey: pageKey ? pageKey : null,
+    });
+    // Formatting the sales data
+    const formattedSales = sales.nftSales.map((NFT) => {
+      const { tokenId, quantity, buyerAddress, sellerAddress, sellerFee } = NFT;
+      return {
+        tokenId,
+        quantity,
+        buyerAddress,
+        sellerAddress,
+        // Converting the seller fee amount to the correct format
+        sellerFee:
+          parseInt(sellerFee.amount) / Math.pow(10, sellerFee.decimals),
+        tokenSymbol: sellerFee.symbol,
+      };
+    });
+
+    // Responding with the formatted sales data and the page key (if any)
+    res.status(200).json({
+      sales: formattedSales,
+      pageKey: sales.pageKey,
+    });
+    // Rest of the code
+  } catch (e) {
+    // Catching any errors and responding with status 500 Internal Server Error and a message
+    console.warn(e);
+    res.status(500).send({
+      message: "something went wrong, check the log in your terminal",
+    });
+  }
+}
+```
+
+   #### Implementing the NFT collection sales display
 
     
