@@ -2,7 +2,6 @@
   "index": "Introduction",
   "installation": "Installation",
   "advanced": "Add Components",
-
   "about": {
     "title": "About",
     "type": "page"
@@ -11,12 +10,6 @@
     "title": "Contact ↗",
     "type": "page",
     "href": "https://twitter.com/0xwaya",
-    "newWindow": true
-  },
-  "github": {
-    "title": "GitHub ↗",
-    "type": "page",
-    "href": "https://github.com/0xwaya/web3dapp-docs",
     "newWindow": true
   }
 }
